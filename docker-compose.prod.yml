@@ -1,0 +1,23 @@
+services:
+  backend:
+    image: ${REGISTRY}/dongne-backend:${TAG:-latest}
+    ports:
+      - "8000:8000"
+    env_file: ./backend/.env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    image: ${REGISTRY}/dongne-frontend:${TAG:-latest}
+    ports:
+      - "3000:3000"
+    env_file: ./frontend/.env.local
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
