@@ -1,4 +1,4 @@
-"""수집 → Supabase upsert 파이프라인 오케스트레이터."""
+"""수집 → AI 요약 → Supabase upsert 파이프라인 오케스트레이터."""
 from __future__ import annotations
 
 import asyncio
@@ -19,6 +19,7 @@ def save_briefing(region: str, briefing_date: date, category: str, data: dict) -
             "date": str(briefing_date),
             "category": category,
             "raw_data": data.get("raw_data"),
+            "summary": data.get("summary"),
             "sources": data.get("sources"),
         },
         on_conflict="region,date,category",
@@ -60,6 +61,9 @@ async def run_pipeline(region: str = "suwon") -> dict:
             continue
 
         try:
+            from app.summarizer.gemini import summarize
+
+            result["summary"] = summarize(category, result)
             save_briefing(region, today, category, result)
             success.append(category)
             logger.info("저장 완료 [%s]", category)
